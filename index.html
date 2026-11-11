@@ -23,19 +23,22 @@ header{position:absolute;top:0;left:0;right:0;z-index:6;height:52px;padding:0 16
 #side .panel{width:380px;max-width:none;max-height:none;height:100%;border-radius:0}
 #feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;box-sizing:border-box;padding:8px 0;scroll-snap-align:start;scroll-snap-stop:always;display:flex;justify-content:center;align-items:center;gap:16px}
-.player{position:relative;aspect-ratio:var(--ar,.5625);width:min(calc(100cqw - 170px),calc((100cqh - 16px)*var(--ar,.5625)));background:#000;border-radius:16px;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.player{position:relative;aspect-ratio:var(--ar,.5625);width:min(calc(100cqw - 170px),calc((100cqh - 16px)*var(--ar,.5625)));background:#000;border-radius:16px;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .media{width:100%;height:100%;object-fit:contain;display:block}
 .info{position:absolute;left:0;right:0;bottom:0;padding:56px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;pointer-events:none}
 .info b{display:block;font-size:16px}
 .info span{display:block;margin-top:2px;font-size:14px;opacity:.92}
-.track{position:absolute;left:0;right:0;bottom:0;height:18px;z-index:2;cursor:pointer;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.28)) bottom/100% 3px no-repeat;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.track{position:absolute;left:10px;right:10px;bottom:4px;height:24px;z-index:2;cursor:pointer;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.28)) bottom/100% 3px no-repeat;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:#fff;pointer-events:none;transition:height .15s}
 .track:hover .bar{height:6px}
 .track.hold{background-size:100% 8px}
+.hp{position:absolute;width:88px;height:88px;margin:-44px 0 0 -44px;pointer-events:none;z-index:4;animation:hp .7s ease-out forwards}
+.hp .ic{width:100%;height:100%;fill:var(--acc);stroke:var(--acc);filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+@keyframes hp{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.1);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(1.2) translateY(-20px);opacity:0}}
 .track.hold .bar{height:8px}
 .track.hold .bar::after{content:"";position:absolute;right:-8px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.5);animation:pop .18s ease-out}
 @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
-.pv{position:absolute;bottom:32px;z-index:3;background:#000;border:2px solid #fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);pointer-events:none;opacity:0;transform:translateX(-50%) translateY(10px) scale(.85);transform-origin:bottom center;transition:opacity .18s,transform .18s}
+.pv{position:absolute;bottom:22px;z-index:3;background:#000;border:2px solid #fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);pointer-events:none;opacity:0;transform:translateX(-50%) translateY(10px) scale(.85);transform-origin:bottom center;transition:opacity .18s,transform .18s}
 .pv.on{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 .pv span{display:block;padding:3px 0;text-align:center;font-size:12px;font-weight:600;color:#fff;background:rgba(0,0,0,.7)}
 .pp{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:none;place-items:center;pointer-events:none}
@@ -191,7 +194,7 @@ function upd(i){
  const {el:s,v}=items[i],q=k=>s.querySelector("."+k),n=(S.cm[v.id]||[]).length+v.cm.length;
  q("like").classList.toggle("on",!!S.liked[v.id]);q("like span").textContent=fmt(v.likes+(S.liked[v.id]?1:0));
  q("cmt span").textContent=fmt(n);
- q("save").classList.toggle("on",!!S.saved[v.id]);q("save span").textContent=S.saved[v.id]?"Saved":"Save";
+ q("save").classList.toggle("on",!!S.saved[v.id]);q("save span").textContent=fmt(Math.round(v.likes*.1)+(S.saved[v.id]?1:0));
  
 }
 
@@ -283,10 +286,11 @@ function scrub(it,tr,f){
 feed.addEventListener("pointerdown",e=>{
  const tr=e.target.closest(".track");if(!tr)return;
  const i=+tr.closest(".slide").dataset.i,it=items[i];
- let on=false,x=e.clientX;
+ let on=false,x=e.clientX;const x0=x;
  const pos=()=>{const r=tr.getBoundingClientRect();return Math.max(0,Math.min(1,(x-r.left)/r.width))};
- const mv=ev=>{x=ev.clientX;if(on)scrub(it,tr,pos())};
- const tm=setTimeout(()=>{on=true;it.scrub=true;if(it.vid)it.vid.pause();pvOpen(it,tr);scrub(it,tr,pos())},350);
+ const st=()=>{if(on)return;on=true;it.scrub=true;if(it.vid)it.vid.pause();pvOpen(it,tr);scrub(it,tr,pos())};
+ const mv=ev=>{x=ev.clientX;if(!on&&Math.abs(x-x0)>5)st();if(on)scrub(it,tr,pos())};
+ const tm=setTimeout(st,120);
  const end=()=>{
   clearTimeout(tm);removeEventListener("pointermove",mv);removeEventListener("pointerup",end);removeEventListener("pointercancel",end);
   if(!on)return;
@@ -296,6 +300,11 @@ feed.addEventListener("pointerdown",e=>{
  addEventListener("pointermove",mv);addEventListener("pointerup",end);addEventListener("pointercancel",end);
 });
 feed.addEventListener("contextmenu",e=>{if(e.target.closest(".track"))e.preventDefault()});
+function heart(it,e){
+ const p=it.el.querySelector(".player"),r=p.getBoundingClientRect(),h=el("div","hp");
+ h.innerHTML=ic("heart");h.style.left=e.clientX-r.left+"px";h.style.top=e.clientY-r.top+"px";
+ p.append(h);setTimeout(()=>h.remove(),700);
+}
 let last=0;
 function tick(ts){
  requestAnimationFrame(tick);
@@ -382,9 +391,13 @@ feed.addEventListener("click",e=>{
   else if(k=="save"){S.saved[id]=!S.saved[id];persist();upd(i);toast(S.saved[id]?"Video saved":"Removed from saved")}
   else if(k=="cmt")comments(i);
   else menu(i,a);
- }else if(e.target.closest(".player"))setP(items[i],!items[i].paused);
+ }else if(e.target.closest(".player")){
+  const it=items[i],n=performance.now();
+  if(n-(it.tapT||0)<300&&(it.tap||it.dbl)){clearTimeout(it.tap);it.tap=0;it.dbl=1;it.tapT=n;like(i,true);heart(it,e)}
+  else{it.dbl=0;it.tapT=n;it.tap=setTimeout(()=>{it.tap=0;setP(it,!it.paused)},300)}
+ }
 });
-feed.addEventListener("dblclick",e=>{const p=e.target.closest(".player");if(p&&!e.target.closest(".track"))like(+p.parentNode.dataset.i,true)});
+
 sh.addEventListener("click",e=>{if(e.target===sh)close()});
 $("#x").onclick=close;
 addEventListener("keydown",e=>{if(e.key=="Escape"){close();closeMenu()}});
