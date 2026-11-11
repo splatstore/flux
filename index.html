@@ -82,20 +82,19 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
 .menu button:hover{background:var(--btn)}
 .menu .ic{width:20px;height:20px}
 .snd{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;z-index:5}
-.snd button{width:48px;height:48px;border-radius:50%;border:0;background:var(--btn);display:grid;place-items:center;cursor:pointer}
-.snd input{writing-mode:vertical-lr;direction:rtl;height:110px;width:24px;accent-color:var(--acc);cursor:pointer}
+.snd button{width:48px;height:48px;border-radius:50%;border:0;background:var(--abtn,var(--btn));color:var(--afg,var(--fg));display:grid;place-items:center;cursor:pointer}
+.snd input{writing-mode:vertical-lr;direction:rtl;height:90px;width:24px;accent-color:var(--acc);cursor:pointer}
+.actions .snd{position:static;transform:none}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;font-size:14px}
 .toast.on{opacity:1}
 @media (max-width:760px),(orientation:portrait){
  .slide{padding:0}
  .player{width:100%;height:100%;aspect-ratio:auto;border-radius:0}
  .info{padding-right:84px}
- .actions{--abtn:rgba(0,0,0,.42);--afg:#fff;position:absolute;right:10px;bottom:64px;padding:0;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+ .actions{--abtn:rgba(0,0,0,.42);--afg:#fff;position:absolute;right:10px;bottom:22px;padding:0;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6)}
  .nav,#side{display:none}
  header{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
  .add{background:rgba(0,0,0,.42);text-shadow:none}
- .snd{left:auto;right:10px;top:60px;transform:none}
- .snd button{background:rgba(0,0,0,.42);color:#fff}
  .snd input{display:none}
  .sheet{align-items:flex-end}
  .panel{border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -172,7 +171,7 @@ function draw(c,v,t){
 }
 
 function render(){
- io.disconnect();feed.innerHTML="";items=[];cur=0;
+ io.disconnect();$(".stage").append($(".snd"));feed.innerHTML="";items=[];cur=0;
  V.forEach((v,i)=>{
   const s=el("section","slide"),r=v.r||9/16,cw=r>=1?640:Math.round(640*r),ch=r>=1?Math.round(640/r):640;s.dataset.i=i;s.style.setProperty("--ar",r);
   s.innerHTML=`<div class="player">${v.src?`<video class="media" src="${v.src}" loop playsinline></video>`:`<canvas class="media" width="${cw}" height="${ch}"></canvas>`}<div class="pp">${ic("play")}</div><div class="info"><b></b><span></span></div><div class="track" aria-label="Progress bar"><div class="bar"></div></div></div><div class="actions">${["like","cmt","save","more"].map(k=>`<button class="act ${k}" data-k="${k}" aria-label="${L[k]}"><i>${ic(I[k])}</i><span></span></button>`).join("")}</div>`;
@@ -204,7 +203,7 @@ function go(i){
   if(j==i){it.t=0;if(it.vid)it.vid.currentTime=0;setP(it,false)}
   else{it.paused=true;it.el.classList.remove("paused");if(it.vid)it.vid.pause()}
  });
- prev.disabled=i==0;next.disabled=i==items.length-1;if(side.classList.contains("open"))comments(i);
+ prev.disabled=i==0;next.disabled=i==items.length-1;items[i].el.querySelector(".actions").append($(".snd"));if(side.classList.contains("open"))comments(i);
 }
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)go(+e.target.dataset.i)}),{root:feed,threshold:.6});
 let anim=0,wl=0;
