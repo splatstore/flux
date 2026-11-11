@@ -85,6 +85,9 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
 .snd button{width:48px;height:48px;border-radius:50%;border:0;background:var(--abtn,var(--btn));color:var(--afg,var(--fg));display:grid;place-items:center;cursor:pointer}
 .snd input{writing-mode:vertical-lr;direction:rtl;height:90px;width:24px;accent-color:var(--acc);cursor:pointer}
 .actions .snd{position:static;transform:none}
+.pill{display:flex;flex-direction:column;align-items:center;background:var(--abtn);border-radius:24px}
+.pill .act i,.pill .snd button{background:none}
+.pill .snd input{margin-bottom:12px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;font-size:14px}
 .toast.on{opacity:1}
 @media (max-width:760px),(orientation:portrait){
@@ -174,7 +177,7 @@ function render(){
  io.disconnect();$(".stage").append($(".snd"));feed.innerHTML="";items=[];cur=0;
  V.forEach((v,i)=>{
   const s=el("section","slide"),r=v.r||9/16,cw=r>=1?640:Math.round(640*r),ch=r>=1?Math.round(640/r):640;s.dataset.i=i;s.style.setProperty("--ar",r);
-  s.innerHTML=`<div class="player">${v.src?`<video class="media" src="${v.src}" loop playsinline></video>`:`<canvas class="media" width="${cw}" height="${ch}"></canvas>`}<div class="pp">${ic("play")}</div><div class="info"><b></b><span></span></div><div class="track" aria-label="Progress bar"><div class="bar"></div></div></div><div class="actions">${["like","cmt","save","more"].map(k=>`<button class="act ${k}" data-k="${k}" aria-label="${L[k]}"><i>${ic(I[k])}</i><span></span></button>`).join("")}</div>`;
+  s.innerHTML=`<div class="player">${v.src?`<video class="media" src="${v.src}" loop playsinline></video>`:`<canvas class="media" width="${cw}" height="${ch}"></canvas>`}<div class="pp">${ic("play")}</div><div class="info"><b></b><span></span></div><div class="track" aria-label="Progress bar"><div class="bar"></div></div></div><div class="actions">${["like","cmt","save"].map(k=>`<button class="act ${k}" data-k="${k}" aria-label="${L[k]}"><i>${ic(I[k])}</i><span></span></button>`).join("")}<div class="pill"><button class="act more" data-k="more" aria-label="More options"><i>${ic("dots")}</i></button></div></div>`;
   s.querySelector(".info b").textContent=v.user;s.querySelector(".info span").textContent=v.cap;
   feed.append(s);
   const cv=s.querySelector("canvas"),vd=s.querySelector("video");if(vd)vd.onloadedmetadata=()=>s.style.setProperty("--ar",vd.videoWidth/vd.videoHeight);
@@ -203,7 +206,7 @@ function go(i){
   if(j==i){it.t=0;if(it.vid)it.vid.currentTime=0;setP(it,false)}
   else{it.paused=true;it.el.classList.remove("paused");if(it.vid)it.vid.pause()}
  });
- prev.disabled=i==0;next.disabled=i==items.length-1;items[i].el.querySelector(".actions").append($(".snd"));if(side.classList.contains("open"))comments(i);
+ prev.disabled=i==0;next.disabled=i==items.length-1;items[i].el.querySelector(".pill").append($(".snd"));if(side.classList.contains("open"))comments(i);
 }
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)go(+e.target.dataset.i)}),{root:feed,threshold:.6});
 let anim=0,wl=0;
