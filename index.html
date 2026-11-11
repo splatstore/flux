@@ -28,7 +28,9 @@ header{flex:none;height:52px;padding:0 16px;display:flex;justify-content:space-b
 .info{position:absolute;left:0;right:0;bottom:0;padding:56px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;pointer-events:none}
 .info b{display:block;font-size:16px}
 .info span{display:block;margin-top:2px;font-size:14px;opacity:.92}
-.bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:#fff}
+.track{position:absolute;left:0;right:0;bottom:0;height:18px;z-index:2;cursor:pointer;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.28)) bottom/100% 3px no-repeat;touch-action:manipulation}
+.bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:#fff;pointer-events:none;transition:height .15s}
+.track:hover .bar{height:6px}
 .pp{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:none;place-items:center;pointer-events:none}
 .paused .pp{display:grid}
 .ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -68,6 +70,9 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
 .thumb[hidden]{display:none}
 .thumb img{height:56px;border-radius:8px}
 .thumb button{padding:6px 12px!important;font-size:13px}
+.snd{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;z-index:5}
+.snd button{width:48px;height:48px;border-radius:50%;border:0;background:var(--btn);display:grid;place-items:center;cursor:pointer}
+.snd input{writing-mode:vertical-lr;direction:rtl;height:110px;width:24px;accent-color:var(--acc);cursor:pointer}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;font-size:14px}
 .toast.on{opacity:1}
 @media (max-width:760px),(orientation:portrait){
@@ -76,6 +81,9 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
  .info{padding-right:84px}
  .actions{--abtn:rgba(0,0,0,.42);--afg:#fff;position:absolute;right:10px;bottom:64px;padding:0;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,.6)}
  .nav,#side{display:none}
+ .snd{left:auto;right:10px;top:10px;transform:none}
+ .snd button{background:rgba(0,0,0,.42);color:#fff}
+ .snd input{display:none}
  .sheet{align-items:flex-end}
  .panel{border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
 }
@@ -91,6 +99,8 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
 <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
 <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-vol" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+<symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/></symbol>
 </defs></svg>
 
 <header>
@@ -101,7 +111,8 @@ button:focus-visible,input:focus-visible,.add:focus-within{outline:2px solid var
 <div class="nav">
  <button id="prev" aria-label="Vidéo précédente"><svg class="ic"><use href="#i-up"/></svg></button>
  <button id="next" aria-label="Vidéo suivante"><svg class="ic"><use href="#i-down"/></svg></button>
-</div></div><aside id="side"></aside></div>
+</div>
+<div class="snd"><button id="mute" aria-label="Activer le son"><svg class="ic"><use href="#i-mute"/></svg></button><input id="vol" type="range" min="0" max="1" step=".01" value="0" aria-label="Volume"></div></div><aside id="side"></aside></div>
 <div class="sheet" id="sheet" hidden>
  <div class="panel" role="dialog" aria-modal="true">
   <div class="ph"><span id="pt"></span><button id="x" aria-label="Fermer">×</button></div>
@@ -149,7 +160,7 @@ function render(){
  io.disconnect();feed.innerHTML="";items=[];cur=0;
  V.forEach((v,i)=>{
   const s=el("section","slide"),r=v.r||9/16,cw=r>=1?640:Math.round(640*r),ch=r>=1?Math.round(640/r):640;s.dataset.i=i;s.style.setProperty("--ar",r);
-  s.innerHTML=`<div class="player">${v.src?`<video class="media" src="${v.src}" loop playsinline></video>`:`<canvas class="media" width="${cw}" height="${ch}"></canvas>`}<div class="pp">${ic("play")}</div><div class="info"><b></b><span></span></div><div class="bar"></div></div><div class="actions">${["like","cmt","save","flag"].map(k=>`<button class="act ${k}" data-k="${k}" aria-label="${L[k]}"><i>${ic(I[k])}</i><span></span></button>`).join("")}</div>`;
+  s.innerHTML=`<div class="player">${v.src?`<video class="media" src="${v.src}" loop playsinline></video>`:`<canvas class="media" width="${cw}" height="${ch}"></canvas>`}<div class="pp">${ic("play")}</div><div class="info"><b></b><span></span></div><div class="track" aria-label="Barre de progression"><div class="bar"></div></div></div><div class="actions">${["like","cmt","save","flag"].map(k=>`<button class="act ${k}" data-k="${k}" aria-label="${L[k]}"><i>${ic(I[k])}</i><span></span></button>`).join("")}</div>`;
   s.querySelector(".info b").textContent=v.user;s.querySelector(".info span").textContent=v.cap;
   feed.append(s);
   const cv=s.querySelector("canvas"),vd=s.querySelector("video");if(vd)vd.onloadedmetadata=()=>s.style.setProperty("--ar",vd.videoWidth/vd.videoHeight);
@@ -169,7 +180,8 @@ function upd(i){
 
 function setP(it,p){
  it.paused=p;it.el.classList.toggle("paused",p);
- if(it.vid){if(p)it.vid.pause();else it.vid.play().catch(()=>{it.vid.muted=true;it.vid.play().catch(()=>{})})}
+ if(it.vid){if(p)it.vid.pause();else{it.vid.muted=muted;it.vid.volume=vol;it.vid.play().catch(()=>{muted=true;snd();it.vid.play().catch(()=>{})})}}
+ tone();
 }
 function go(i){
  cur=i;
@@ -180,7 +192,21 @@ function go(i){
  prev.disabled=i==0;next.disabled=i==items.length-1;if(side.classList.contains("open"))comments(i);
 }
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)go(+e.target.dataset.i)}),{root:feed,threshold:.6});
-const scrollTo=i=>{if(i>=0&&i<items.length)feed.scrollTo({top:i*feed.clientHeight,behavior:"smooth"})};
+let anim=0,wl=0;
+const scrollTo=i=>{
+ if(i<0||i>=items.length)return;
+ const a=feed.scrollTop,b=i*feed.clientHeight,t0=performance.now(),D=220,id=++anim;
+ feed.style.scrollSnapType="none";
+ const f=t=>{if(id!==anim)return;const k=Math.min(1,(t-t0)/D);feed.scrollTop=a+(b-a)*(1-Math.pow(1-k,3));if(k<1)requestAnimationFrame(f);else feed.style.scrollSnapType=""};
+ requestAnimationFrame(f);
+};
+feed.addEventListener("touchstart",()=>{anim++;feed.style.scrollSnapType=""},{passive:true});
+feed.addEventListener("wheel",e=>{
+ e.preventDefault();
+ const n=performance.now(),ok=n>wl&&Math.abs(e.deltaY)>8;
+ wl=Math.max(wl,n+(ok?300:150));
+ if(ok)scrollTo(cur+(e.deltaY>0?1:-1));
+},{passive:false});
 prev.onclick=()=>scrollTo(cur-1);next.onclick=()=>scrollTo(cur+1);
 addEventListener("keydown",e=>{
  if(!sh.hidden||/INPUT/.test(e.target.tagName))return;
@@ -188,6 +214,29 @@ addEventListener("keydown",e=>{
  if(e.key=="ArrowUp"){e.preventDefault();scrollTo(cur-1)}
 });
 
+let ac,mg,tn=[],muted=true,vol=.8;
+function wake(){if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)();mg=ac.createGain();mg.connect(ac.destination)}ac.resume();tone()}
+function tone(){
+ tn.forEach(o=>{try{o.stop()}catch(e){}});tn=[];
+ const it=items[cur];if(!ac||!it||it.vid||it.paused)return;
+ const f=110+it.v.hue/360*110;
+ [1,1.5,2].forEach((m,k)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=f*m;g.gain.value=.08/(k+1);o.connect(g);g.connect(mg);o.start();tn.push(o)});
+}
+function snd(){
+ items.forEach(x=>{if(x.vid){x.vid.muted=muted;x.vid.volume=vol}});
+ if(mg)mg.gain.value=muted?0:vol;
+ $("#mute use").setAttribute("href",muted?"#i-mute":"#i-vol");
+ $("#mute").setAttribute("aria-label",muted?"Activer le son":"Couper le son");
+ $("#vol").value=muted?0:vol;
+}
+$("#mute").onclick=()=>{muted=!muted;if(!muted&&vol<.05)vol=.6;if(!muted)wake();snd()};
+$("#vol").oninput=e=>{vol=+e.target.value;muted=vol==0;if(!muted)wake();snd()};
+function seek(i,r,x){
+ const it=items[i],f=Math.max(0,Math.min(1,(x-r.left)/r.width));
+ if(it.vid){if(it.vid.duration)it.vid.currentTime=f*it.vid.duration}
+ else{it.t=f*12;draw(it.cv,it.v,it.t)}
+ it.bar.style.width=f*100+"%";
+}
 let last=0;
 function tick(ts){
  requestAnimationFrame(tick);
@@ -247,7 +296,8 @@ function report(i){
 
 feed.addEventListener("click",e=>{
  const s=e.target.closest(".slide");if(!s)return;
- const i=+s.dataset.i,a=e.target.closest(".act");
+ const i=+s.dataset.i,a=e.target.closest(".act"),tr=e.target.closest(".track");
+ if(tr){seek(i,tr.getBoundingClientRect(),e.clientX);return}
  if(a){
   const k=a.dataset.k,id=V[i].id;
   if(k=="like")like(i);
@@ -256,7 +306,7 @@ feed.addEventListener("click",e=>{
   else report(i);
  }else if(e.target.closest(".player"))setP(items[i],!items[i].paused);
 });
-feed.addEventListener("dblclick",e=>{const p=e.target.closest(".player");if(p)like(+p.parentNode.dataset.i,true)});
+feed.addEventListener("dblclick",e=>{const p=e.target.closest(".player");if(p&&!e.target.closest(".track"))like(+p.parentNode.dataset.i,true)});
 sh.addEventListener("click",e=>{if(e.target===sh)close()});
 $("#x").onclick=close;
 addEventListener("keydown",e=>{if(e.key=="Escape")close()});
@@ -268,7 +318,7 @@ $("#up").onchange=e=>{
  toast("Vidéo ajoutée (visible pour vous pendant cette session).");
 };
 
-render();requestAnimationFrame(tick);
+snd();render();requestAnimationFrame(tick);
 </script>
 </body>
 </html>
